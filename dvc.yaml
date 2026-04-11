@@ -1,0 +1,29 @@
+stages:
+  ingest:
+    cmd: python scripts/ingest.py
+    deps:
+      - scripts/ingest.py
+      - src/ingestion/coingecko.py
+      - src/config.py
+    params:
+      - ingest.coin_id
+      - ingest.vs_currency
+      - ingest.days
+      - ingest.out_path
+    outs:
+      - data/raw/btc_usd.csv
+
+  featurize:
+    cmd: python scripts/featurize.py
+    deps:
+      - scripts/featurize.py
+      - src/features/indicators.py
+      - src/features/labels.py
+      - src/config.py
+      - data/raw/btc_usd.csv
+    params:
+      - featurize.in_path
+      - featurize.out_path
+      - featurize.horizon
+    outs:
+      - data/processed/features.csv

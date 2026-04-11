@@ -1,0 +1,61 @@
+schema: '2.0'
+stages:
+  ingest:
+    cmd: python scripts/ingest.py
+    deps:
+    - path: scripts/ingest.py
+      hash: md5
+      md5: 7b25a31b522a7a86584327963008cd69
+      size: 1261
+    - path: src/config.py
+      hash: md5
+      md5: 6c4b5b459d5c5390bc9864a11ad1171e
+      size: 729
+    - path: src/ingestion/coingecko.py
+      hash: md5
+      md5: 815184c5ef2c9d5699dbc2539c15eec2
+      size: 3170
+    params:
+      params.yaml:
+        ingest.coin_id: bitcoin
+        ingest.days: 365
+        ingest.out_path: data/raw/btc_usd.csv
+        ingest.vs_currency: usd
+    outs:
+    - path: data/raw/btc_usd.csv
+      hash: md5
+      md5: 43cb2a4d80c150ae6833282354929720
+      size: 22883
+  featurize:
+    cmd: python scripts/featurize.py
+    deps:
+    - path: data/raw/btc_usd.csv
+      hash: md5
+      md5: 43cb2a4d80c150ae6833282354929720
+      size: 22883
+    - path: scripts/featurize.py
+      hash: md5
+      md5: 7b204566c425504fcb5ac384d34c4cb4
+      size: 1404
+    - path: src/config.py
+      hash: md5
+      md5: 6c4b5b459d5c5390bc9864a11ad1171e
+      size: 729
+    - path: src/features/indicators.py
+      hash: md5
+      md5: f6e4ae75e9e5570c628e491de0a4a042
+      size: 2842
+    - path: src/features/labels.py
+      hash: md5
+      md5: 1ab04fb6d0e6eaf6a38bdf7f4ceb6925
+      size: 1246
+    params:
+      params.yaml:
+        featurize.horizon: 1
+        featurize.in_path: data/raw/btc_usd.csv
+        featurize.out_path: data/processed/features.csv
+    outs:
+    - path: data/processed/features.csv
+      hash: md5
+      md5: 11da5d916353327f3af26def522613b6
+      size: 86036
