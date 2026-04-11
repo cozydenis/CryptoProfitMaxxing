@@ -79,15 +79,19 @@ pytest tests/ --cov=src --cov-report=term-missing
     └── project-plan-crypto-predictor.md
 ```
 
-## Week 9 Scope
+## Scope
 
 Delivered:
 - [x] CoinGecko BTC ingestion, DVC-versioned
 - [x] Technical indicators + leak-free target labeling
 - [x] Logistic Regression + Random Forest baselines
 - [x] MLflow experiment tracking + model registry
-- [x] Streamlit dashboard skeleton (predictions + price chart)
-- [x] pytest coverage on critical paths
+- [x] Streamlit dashboard with side-by-side model comparison:
+      best run per model (ROC AUC → accuracy → start_time tiebreaker),
+      parallel predictions with disagreement banner, metric bar chart,
+      ROC overlay, confusion matrices, RF feature importance, all-runs
+      audit expander, Refresh from MLflow button, stale-features warning
+- [x] 65 tests, 97% coverage on `src/`
 
 Known limitations:
 - 365 days of history (CoinGecko free-tier cap)

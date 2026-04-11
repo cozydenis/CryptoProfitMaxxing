@@ -1,28 +1,50 @@
-"""Streamlit dashboard for the CryptoProfitMaxxing baseline pipeline.
+"""Streamlit dashboard for CryptoProfitMaxxing.
 
-Week 9 skeleton: loads the most recent features CSV, picks a model from the
-MLflow registry (falls back to the local joblib artifact), renders a BTC price
-chart, and shows a next-day UP / DOWN prediction with class probability.
+Shows the BTC price chart, side-by-side model comparison (best run per model
+from MLflow), next-day predictions with a disagreement banner, a metric bar
+chart, ROC overlay, confusion matrices, Random Forest feature importance,
+and an "all runs" audit expander. Refresh button in the sidebar invalidates
+caches so new training runs can be picked up mid-demo.
 """
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-from typing import Tuple
+from datetime import datetime, timedelta, timezone
+from typing import Any
 
-import joblib
+import mlflow
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from mlflow.tracking import MlflowClient
 
 from src.config import (
-    DEFAULT_REGISTERED_MODEL_NAME,
+    DEFAULT_EXPERIMENT_NAME,
     FEATURE_COLUMNS,
     MLFLOW_TRACKING_URI,
     MODELS_DIR,
     PROCESSED_DATA_DIR,
+    TARGET_COLUMN,
 )
+from src.mlflow_store import (
+    COMPARISON_METRICS,
+    RunSummary,
+    best_run_per_model,
+    list_runs_by_model,
+    load_model_for_run,
+    metrics_dataframe,
+    runs_dataframe,
+)
+from src.models.baseline import chronological_split
+from src.models.diagnostics import (
+    ModelDiagnostics,
+    evaluate_on_split,
+    feature_importance,
+)
+
+STALE_FEATURES_HOURS = 48
+
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
 st.set_page_config(
     page_title="CryptoProfitMaxxing",
@@ -31,44 +53,85 @@ st.set_page_config(
 )
 
 
-@st.cache_data(show_spinner=False)
-def load_features() -> pd.DataFrame:
+# ---------------------------------------------------------------------------
+# Cached data access
+# ---------------------------------------------------------------------------
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_features() -> pd.DataFrame:
     path = PROCESSED_DATA_DIR / "features.csv"
     if not path.exists():
         return pd.DataFrame()
-    df = pd.read_csv(path, parse_dates=["timestamp"])
-    return df
+    return pd.read_csv(path, parse_dates=["timestamp"])
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_runs_by_model(
+    experiment_name: str,
+) -> dict[str, list[RunSummary]]:
+    client = MlflowClient(tracking_uri=MLFLOW_TRACKING_URI)
+    return list_runs_by_model(client, experiment_name)
 
 
 @st.cache_resource(show_spinner=False)
-def load_model() -> Tuple[object, str]:
-    try:
-        import mlflow
-        import mlflow.sklearn
-
-        mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
-        model_uri = f"models:/{DEFAULT_REGISTERED_MODEL_NAME}/latest"
-        model = mlflow.sklearn.load_model(model_uri)
-        return model, f"MLflow registry ({model_uri})"
-    except Exception:
-        pass
-
-    for candidate in ("baseline_rf.pkl", "baseline_logreg.pkl"):
-        path = MODELS_DIR / candidate
-        if path.exists():
-            return joblib.load(path), f"joblib fallback ({path.name})"
-
-    return None, "no model found"
+def _cached_model_for_run(run_id: str, model_name: str) -> tuple[Any, str]:
+    return load_model_for_run(run_id, model_name, MODELS_DIR)
 
 
-def _load_metrics() -> dict:
-    path = MODELS_DIR / "metrics.json"
-    if not path.exists():
-        return {}
-    try:
-        return json.loads(path.read_text())
-    except json.JSONDecodeError:
-        return {}
+# ---------------------------------------------------------------------------
+# Render helpers (pure — take data, return a chart or write to st)
+# ---------------------------------------------------------------------------
+
+
+def _render_sidebar(
+    runs_by_model: dict[str, list[RunSummary]], df: pd.DataFrame
+) -> None:
+    st.sidebar.header("MLflow")
+    st.sidebar.caption(f"Experiment: **{DEFAULT_EXPERIMENT_NAME}**")
+
+    n_models = len(runs_by_model)
+    n_runs = sum(len(v) for v in runs_by_model.values())
+    st.sidebar.caption(f"{n_runs} runs across {n_models} models")
+
+    if runs_by_model:
+        latest_start = max(
+            r.start_time for runs in runs_by_model.values() for r in runs
+        )
+        latest_dt = datetime.fromtimestamp(latest_start / 1000, tz=timezone.utc)
+        st.sidebar.caption(f"Latest run: {latest_dt:%Y-%m-%d %H:%M UTC}")
+
+    if st.sidebar.button("Refresh from MLflow", width="stretch"):
+        st.cache_data.clear()
+        st.cache_resource.clear()
+        st.rerun()
+
+    if not df.empty:
+        latest_candle = pd.to_datetime(df["timestamp"].iloc[-1])
+        if latest_candle.tzinfo is None:
+            latest_candle = latest_candle.tz_localize("UTC")
+        age = datetime.now(tz=timezone.utc) - latest_candle.to_pydatetime()
+        if age > timedelta(hours=STALE_FEATURES_HOURS):
+            hours = int(age.total_seconds() // 3600)
+            st.sidebar.warning(
+                f":warning: Features are {hours}h old. Run `dvc repro` to refresh."
+            )
+
+    st.sidebar.divider()
+    st.sidebar.caption(
+        "CryptoProfitMaxxing — Week 10 pitch demo  \n"
+        "CoinGecko + DVC + MLflow + Streamlit"
+    )
+
+
+def _render_header(df: pd.DataFrame) -> None:
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Latest BTC close", f"${df['close'].iloc[-1]:,.2f}")
+    col1.caption(
+        f"as of {pd.to_datetime(df['timestamp'].iloc[-1]).date()}"
+    )
+    col2.metric("Feature rows", f"{len(df):,}")
+    col3.metric("Feature columns", str(len(FEATURE_COLUMNS)))
 
 
 def _price_chart(df: pd.DataFrame) -> go.Figure:
@@ -82,34 +145,216 @@ def _price_chart(df: pd.DataFrame) -> go.Figure:
             line=dict(width=2),
         )
     )
-    if "sma_20" in df.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=df["timestamp"],
-                y=df["sma_20"],
-                mode="lines",
-                name="SMA 20",
-                line=dict(width=1, dash="dash"),
+    for col, style in (("sma_20", "dash"), ("sma_50", "dot")):
+        if col in df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=df["timestamp"],
+                    y=df[col],
+                    mode="lines",
+                    name=col.upper().replace("_", " "),
+                    line=dict(width=1, dash=style),
+                )
             )
-        )
-    if "sma_50" in df.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=df["timestamp"],
-                y=df["sma_50"],
-                mode="lines",
-                name="SMA 50",
-                line=dict(width=1, dash="dot"),
-            )
-        )
     fig.update_layout(
         title="BTC / USD — close price",
         xaxis_title="Date",
         yaxis_title="Price (USD)",
         height=420,
         margin=dict(l=10, r=10, t=40, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
     )
     return fig
+
+
+def _render_metrics_table(metrics_df: pd.DataFrame) -> None:
+    display = metrics_df.copy()
+    display["start_time"] = pd.to_datetime(
+        display["start_time"], unit="ms", utc=True
+    ).dt.strftime("%Y-%m-%d %H:%M")
+    display = display.set_index("model")
+    st.dataframe(display, width="stretch")
+
+
+def _render_prediction_cards(
+    best_runs: dict[str, RunSummary],
+    models_with_source: dict[str, tuple[Any, str]],
+    latest_row: pd.DataFrame,
+) -> dict[str, int]:
+    predictions: dict[str, int] = {}
+    cols = st.columns(max(1, len(best_runs)))
+    for col, model_name in zip(cols, best_runs.keys()):
+        model, source = models_with_source[model_name]
+        with col:
+            if model is None:
+                st.warning(f"{model_name}: model unavailable ({source})")
+                continue
+            pred = int(model.predict(latest_row)[0])
+            try:
+                proba = float(model.predict_proba(latest_row)[0, 1])
+            except Exception:
+                proba = None
+
+            predictions[model_name] = pred
+            direction = "UP" if pred == 1 else "DOWN"
+            arrow = ":arrow_up:" if pred == 1 else ":arrow_down:"
+            st.metric(
+                label=f"{model_name.upper()} {arrow}",
+                value=direction,
+                delta=f"P(up) = {proba:.1%}" if proba is not None else None,
+                delta_color="off",
+            )
+            run = best_runs[model_name]
+            acc = run.metrics.get("accuracy")
+            auc = run.metrics.get("roc_auc")
+            caption_parts = []
+            if acc is not None:
+                caption_parts.append(f"acc {acc:.1%}")
+            if auc is not None:
+                caption_parts.append(f"auc {auc:.2f}")
+            if caption_parts:
+                st.caption("best run · " + " · ".join(caption_parts))
+            if source != "mlflow":
+                st.caption(f":warning: `{source}` (may differ from best run)")
+    return predictions
+
+
+def _render_disagreement_banner(predictions: dict[str, int]) -> None:
+    uniq = set(predictions.values())
+    if len(uniq) > 1:
+        parts = [
+            f"**{name}** = {'UP' if p == 1 else 'DOWN'}"
+            for name, p in predictions.items()
+        ]
+        st.info(":warning: Models disagree — " + " · ".join(parts))
+    elif uniq == {1}:
+        st.success("All models agree: **UP**")
+    elif uniq == {0}:
+        st.warning("All models agree: **DOWN**")
+
+
+def _metrics_bar_chart(metrics_df: pd.DataFrame) -> go.Figure:
+    fig = go.Figure()
+    for _, row in metrics_df.iterrows():
+        values = [row.get(m) for m in COMPARISON_METRICS]
+        fig.add_trace(
+            go.Bar(
+                name=str(row["model"]),
+                x=list(COMPARISON_METRICS),
+                y=values,
+                text=[
+                    f"{v:.2f}" if isinstance(v, (int, float)) and pd.notna(v) else ""
+                    for v in values
+                ],
+                textposition="outside",
+            )
+        )
+    fig.update_layout(
+        barmode="group",
+        yaxis=dict(range=[0, 1], title="score"),
+        height=360,
+        margin=dict(l=10, r=10, t=10, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+    )
+    return fig
+
+
+def _roc_overlay(diag_by_model: dict[str, ModelDiagnostics]) -> go.Figure:
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=[0, 1],
+            y=[0, 1],
+            mode="lines",
+            line=dict(color="gray", dash="dash", width=1),
+            name="chance",
+            showlegend=True,
+        )
+    )
+    for name, diag in diag_by_model.items():
+        auc_label = (
+            f" (AUC={diag.roc_auc:.2f})" if diag.roc_auc is not None else ""
+        )
+        fig.add_trace(
+            go.Scatter(
+                x=diag.fpr,
+                y=diag.tpr,
+                mode="lines",
+                name=f"{name}{auc_label}",
+                line=dict(width=2),
+            )
+        )
+    fig.update_layout(
+        title="ROC curves",
+        xaxis_title="False positive rate",
+        yaxis_title="True positive rate",
+        xaxis=dict(range=[0, 1]),
+        yaxis=dict(range=[0, 1]),
+        height=360,
+        margin=dict(l=10, r=10, t=40, b=10),
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+    )
+    return fig
+
+
+def _render_confusion_matrices(
+    diag_by_model: dict[str, ModelDiagnostics],
+) -> None:
+    cols = st.columns(max(1, len(diag_by_model)))
+    for col, (name, diag) in zip(cols, diag_by_model.items()):
+        with col:
+            st.markdown(f"**{name}** · accuracy {diag.accuracy:.1%}")
+            cm_df = pd.DataFrame(
+                diag.confusion_matrix,
+                index=["true_down", "true_up"],
+                columns=["pred_down", "pred_up"],
+            )
+            st.table(cm_df)
+
+
+def _feature_importance_chart(
+    rf_model: Any,
+) -> go.Figure | None:
+    fi = feature_importance(rf_model, FEATURE_COLUMNS)
+    if fi is None:
+        return None
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=fi["importance"][::-1],
+            y=fi["feature"][::-1],
+            orientation="h",
+            marker=dict(color="steelblue"),
+            text=[f"{v:.3f}" for v in fi["importance"][::-1]],
+            textposition="outside",
+        )
+    )
+    fig.update_layout(
+        title="Random Forest feature importance",
+        xaxis_title="Importance (impurity-based)",
+        height=max(320, 24 * len(fi) + 80),
+        margin=dict(l=10, r=40, t=40, b=10),
+    )
+    return fig
+
+
+def _render_all_runs_expander(
+    runs_by_model: dict[str, list[RunSummary]],
+) -> None:
+    with st.expander("All runs (audit trail)", expanded=False):
+        for name, runs in runs_by_model.items():
+            st.markdown(f"**{name}** — {len(runs)} run(s)")
+            table = runs_dataframe(runs)
+            if "start_time" in table.columns and len(table) > 0:
+                table["start_time"] = pd.to_datetime(
+                    table["start_time"], unit="ms", utc=True
+                ).dt.strftime("%Y-%m-%d %H:%M")
+            st.dataframe(table, width="stretch")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
 
 
 def main() -> None:
@@ -118,80 +363,108 @@ def main() -> None:
         "MLOps pipeline demo — CoinGecko + DVC + MLflow + scikit-learn + Streamlit"
     )
 
-    df = load_features()
+    df = _cached_features()
+    runs_by_model = _cached_runs_by_model(DEFAULT_EXPERIMENT_NAME)
+
+    _render_sidebar(runs_by_model, df)
+
     if df.empty:
         st.warning(
-            "No features CSV found. Run `dvc repro` then `python train.py --model logreg`."
+            "No features CSV found. Run `dvc repro` to build the pipeline, "
+            "then `python train.py --model logreg` and `python train.py --model rf`."
         )
         st.stop()
 
-    model, source = load_model()
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Latest close (USD)", f"${df['close'].iloc[-1]:,.2f}")
-    col1.caption(f"as of {df['timestamp'].iloc[-1].date()}")
-    col2.metric(
-        "Rows in features CSV",
-        f"{len(df):,}",
-        help="After dropping NaN rows from rolling windows and the horizon tail",
-    )
-    col3.metric("Model source", source.split(" ")[0])
-    col3.caption(source)
-
+    _render_header(df)
     st.plotly_chart(_price_chart(df), width="stretch")
 
-    st.subheader("Next-day prediction")
-    if model is None:
-        st.info("No trained model found yet. Run `python train.py --model logreg`.")
-    else:
-        latest_features = df[FEATURE_COLUMNS].iloc[[-1]]
-        pred = int(model.predict(latest_features)[0])
-        try:
-            proba = float(model.predict_proba(latest_features)[0, 1])
-        except Exception:
-            proba = None
-        label = "UP" if pred == 1 else "DOWN"
-        emoji = ":arrow_up:" if pred == 1 else ":arrow_down:"
-        cols = st.columns(2)
-        cols[0].metric(f"Direction {emoji}", label)
-        if proba is not None:
-            cols[1].metric("P(up)", f"{proba:.1%}")
+    st.header("Model comparison")
 
-    st.subheader("Last training run metrics")
-    metrics = _load_metrics()
-    if not metrics:
-        st.info("No `models/metrics.json` yet — run `python train.py` first.")
-    else:
-        display = {k: v for k, v in metrics.items() if isinstance(v, (int, float, str))}
-        st.json(display)
-        if "confusion_matrix" in metrics:
-            st.caption("Confusion matrix (rows=true, cols=pred)")
-            st.table(
-                pd.DataFrame(
-                    metrics["confusion_matrix"],
-                    index=["true_down", "true_up"],
-                    columns=["pred_down", "pred_up"],
-                )
-            )
+    if not runs_by_model:
+        st.warning(
+            f"No runs found in MLflow experiment `{DEFAULT_EXPERIMENT_NAME}`. "
+            "Run `python train.py --model logreg` then `python train.py --model rf`."
+        )
+        st.stop()
+
+    best_runs = best_run_per_model(runs_by_model)
+
+    st.subheader("Best run per model")
+    metrics_df = metrics_dataframe(best_runs)
+    _render_metrics_table(metrics_df)
+
+    models_with_source: dict[str, tuple[Any, str]] = {}
+    for name, run in best_runs.items():
+        models_with_source[name] = _cached_model_for_run(run.run_id, name)
+
+    st.subheader("Next-day prediction")
+    latest_row = df[FEATURE_COLUMNS].iloc[[-1]]
+    predictions = _render_prediction_cards(
+        best_runs, models_with_source, latest_row
+    )
+    if len(predictions) >= 2:
+        _render_disagreement_banner(predictions)
+    st.caption(
+        f"Prediction horizon: day after {pd.to_datetime(df['timestamp'].iloc[-1]).date()}"
+    )
+
+    if len(best_runs) < 2:
+        st.info(
+            "Only one model available — train another with "
+            "`python train.py --model <name>` for full comparison."
+        )
+        _render_all_runs_expander(runs_by_model)
+        return
+
+    st.subheader("Metric comparison")
+    st.plotly_chart(_metrics_bar_chart(metrics_df), width="stretch")
+
+    st.subheader("Diagnostics on held-out test split")
+    X_all = df[FEATURE_COLUMNS].copy()
+    y_all = df[TARGET_COLUMN].astype(int)
+    split = chronological_split(X_all, y_all, test_frac=0.2)
+
+    diag_by_model: dict[str, ModelDiagnostics] = {}
+    for name, (model, _) in models_with_source.items():
+        if model is None:
+            continue
+        diag_by_model[name] = evaluate_on_split(
+            model, split.X_test, split.y_test
+        )
+
+    if diag_by_model:
+        st.plotly_chart(
+            _roc_overlay(diag_by_model), width="stretch"
+        )
+        _render_confusion_matrices(diag_by_model)
+
+    rf_entry = models_with_source.get("rf")
+    if rf_entry is not None and rf_entry[0] is not None:
+        fig = _feature_importance_chart(rf_entry[0])
+        if fig is not None:
+            st.plotly_chart(fig, width="stretch")
+
+    _render_all_runs_expander(runs_by_model)
 
     with st.expander("About this dashboard"):
         st.markdown(
             """
-            This is a **Week 9 skeleton** for the CryptoProfitMaxxing MLOps demo.
+            **Week 10 pitch demo** for the CryptoProfitMaxxing MLOps project.
 
-            The pipeline:
-
+            Pipeline:
             1. `dvc repro` — ingest CoinGecko BTC data and compute technical
                indicators (RSI, MACD, SMA, EMA).
-            2. `python train.py --model logreg` / `--model rf` — train a
-               classifier on a chronological 80/20 split, log params + metrics +
-               artifacts to MLflow, register the model in the MLflow registry.
-            3. This dashboard loads the latest registered model and predicts
-               whether BTC will be higher tomorrow than today.
+            2. `python train.py --model {logreg,rf}` — train a classifier on
+               a chronological 80/20 split. Params, metrics, and the sklearn
+               artifact are logged to the local MLflow store; the run is
+               registered to `crypto_trend_baseline`.
+            3. This dashboard queries MLflow for the best run per model
+               (ROC AUC → accuracy → start time), loads both, and compares
+               them side by side. Click **Refresh from MLflow** in the
+               sidebar after a new training run to invalidate caches.
 
-            Planned for Week 10+: side-by-side model comparison from the MLflow
-            registry, ETH support, hyperparameter tuning with Ray Tune, drift
-            detection with Alibi Detect.
+            Planned for Week 11+: GitHub Actions CI, ETH support, Ray Tune
+            hyperparameter search, Alibi Detect drift monitoring.
             """
         )
 
