@@ -1,0 +1,18 @@
+ingest:
+  coin_id: bitcoin
+  vs_currency: usd
+  days: 365
+  out_path: data/raw/btc_usd.csv
+
+featurize:
+  in_path: data/raw/btc_usd.csv
+  out_path: data/processed/features.csv
+  horizon: 1
+
+train:
+  features_path: data/processed/features.csv
+  model: logreg
+  test_frac: 0.2
+  random_state: 42
+  experiment_name: crypto-baseline
+  registered_model_name: crypto_trend_baseline

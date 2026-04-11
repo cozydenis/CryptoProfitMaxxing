@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+
+# Project data (DVC-tracked, never in git)
+data/
+models/
+
+# MLflow local store
+mlruns/
+mlartifacts/
+
+# DVC
+.dvc/cache
+.dvc/tmp
+.dvc/plots
+
+# Secrets
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+.claude/
+*.swp
+.DS_Store
