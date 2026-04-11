@@ -157,12 +157,16 @@ def _price_chart(df: pd.DataFrame) -> go.Figure:
                 )
             )
     fig.update_layout(
-        title="BTC / USD — close price",
         xaxis_title="Date",
         yaxis_title="Price (USD)",
         height=420,
-        margin=dict(l=10, r=10, t=40, b=10),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        margin=dict(l=10, r=10, t=10, b=10),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.28,
+            x=0,
+        ),
     )
     return fig
 
@@ -253,8 +257,13 @@ def _metrics_bar_chart(metrics_df: pd.DataFrame) -> go.Figure:
         barmode="group",
         yaxis=dict(range=[0, 1], title="score"),
         height=360,
-        margin=dict(l=10, r=10, t=10, b=10),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        margin=dict(l=10, r=10, t=40, b=10),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.25,
+            x=0,
+        ),
     )
     return fig
 
@@ -285,14 +294,18 @@ def _roc_overlay(diag_by_model: dict[str, ModelDiagnostics]) -> go.Figure:
             )
         )
     fig.update_layout(
-        title="ROC curves",
         xaxis_title="False positive rate",
         yaxis_title="True positive rate",
         xaxis=dict(range=[0, 1]),
         yaxis=dict(range=[0, 1]),
         height=360,
-        margin=dict(l=10, r=10, t=40, b=10),
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0),
+        margin=dict(l=10, r=10, t=10, b=10),
+        legend=dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.28,
+            x=0,
+        ),
     )
     return fig
 
@@ -330,10 +343,9 @@ def _feature_importance_chart(
         )
     )
     fig.update_layout(
-        title="Random Forest feature importance",
         xaxis_title="Importance (impurity-based)",
         height=max(320, 24 * len(fi) + 80),
-        margin=dict(l=10, r=40, t=40, b=10),
+        margin=dict(l=10, r=40, t=10, b=10),
     )
     return fig
 
@@ -376,6 +388,7 @@ def main() -> None:
         st.stop()
 
     _render_header(df)
+    st.subheader("BTC / USD — close price")
     st.plotly_chart(_price_chart(df), width="stretch")
 
     st.header("Model comparison")
@@ -433,15 +446,18 @@ def main() -> None:
         )
 
     if diag_by_model:
+        st.markdown("**ROC curves**")
         st.plotly_chart(
             _roc_overlay(diag_by_model), width="stretch"
         )
+        st.markdown("**Confusion matrices**")
         _render_confusion_matrices(diag_by_model)
 
     rf_entry = models_with_source.get("rf")
     if rf_entry is not None and rf_entry[0] is not None:
         fig = _feature_importance_chart(rf_entry[0])
         if fig is not None:
+            st.subheader("Random Forest feature importance")
             st.plotly_chart(fig, width="stretch")
 
     _render_all_runs_expander(runs_by_model)
