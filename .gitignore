@@ -14,8 +14,8 @@ htmlcov/
 *.egg-info/
 
 # Project data (DVC-tracked, never in git)
-data/
-models/
+/data/
+/models/
 
 # MLflow local store
 mlruns/
