@@ -6,7 +6,6 @@ from unittest.mock import MagicMock
 
 import pandas as pd
 import pytest
-
 from src.ingestion.coingecko import (
     _build_frame,
     fetch_market_chart,

@@ -6,8 +6,6 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
-import pytest
-
 from src.mlflow_store import (
     COMPARISON_METRICS,
     RunSummary,

@@ -13,11 +13,9 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from streamlit.testing.v1 import AppTest
-
 from src.config import FEATURE_COLUMNS, TARGET_COLUMN
 from src.mlflow_store import RunSummary
-
+from streamlit.testing.v1 import AppTest
 
 APP_PATH = str(Path(__file__).resolve().parent.parent / "app.py")
 

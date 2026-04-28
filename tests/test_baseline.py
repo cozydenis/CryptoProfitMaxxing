@@ -5,7 +5,6 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 import pytest
-
 from src.config import FEATURE_COLUMNS, TARGET_COLUMN
 from src.models.baseline import (
     SUPPORTED_MODELS,
