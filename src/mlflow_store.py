@@ -19,6 +19,8 @@ import joblib
 import pandas as pd
 from mlflow.sklearn import load_model as _mlflow_load_model
 
+from src.config import TUNE_TAG_KEY
+
 COMPARISON_METRICS: tuple[str, ...] = (
     "accuracy",
     "precision",
@@ -38,6 +40,7 @@ class RunSummary:
     params: Mapping[str, str]
     start_time: int  # ms since epoch
     experiment_id: str
+    tuning_source: str | None = None
 
 
 def list_runs_by_model(
@@ -62,6 +65,7 @@ def list_runs_by_model(
         model = params.get("model")
         if not model:
             continue
+        tags = dict(getattr(run.data, "tags", None) or {})
         summary = RunSummary(
             run_id=run.info.run_id,
             model=model,
@@ -69,6 +73,7 @@ def list_runs_by_model(
             params=params,
             start_time=int(run.info.start_time),
             experiment_id=run.info.experiment_id,
+            tuning_source=tags.get(TUNE_TAG_KEY),
         )
         grouped.setdefault(model, []).append(summary)
     return grouped
@@ -157,3 +162,18 @@ def load_model_for_run(
             pass
 
     return None, "missing"
+
+
+def tuning_summary(
+    runs_by_model: Mapping[str, Iterable[RunSummary]],
+) -> dict[str, dict[str, Any]]:
+    """Per-model counts of tuned vs. manual runs."""
+    result: dict[str, dict[str, Any]] = {}
+    for model, runs in runs_by_model.items():
+        tuned = [r for r in runs if r.tuning_source is not None]
+        manual = [r for r in runs if r.tuning_source is None]
+        result[model] = {
+            "total_tuned_runs": len(tuned),
+            "total_manual_runs": len(manual),
+        }
+    return result

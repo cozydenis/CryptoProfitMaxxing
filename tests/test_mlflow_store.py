@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
+from src.config import TUNE_TAG_KEY
 from src.mlflow_store import (
     COMPARISON_METRICS,
     RunSummary,
@@ -14,6 +15,7 @@ from src.mlflow_store import (
     load_model_for_run,
     metrics_dataframe,
     runs_dataframe,
+    tuning_summary,
 )
 
 
@@ -23,6 +25,7 @@ def _make_run(
     metrics: dict[str, float],
     start_time: int,
     experiment_id: str = "1",
+    tags: dict[str, str] | None = None,
 ) -> SimpleNamespace:
     """Build a minimal object that mimics an MLflow Run's attribute surface."""
     return SimpleNamespace(
@@ -32,6 +35,7 @@ def _make_run(
         data=SimpleNamespace(
             params={"model": model, "test_frac": "0.2"},
             metrics=metrics,
+            tags=tags or {},
         ),
     )
 
@@ -235,3 +239,41 @@ class TestLoadModelForRun:
             model, source = load_model_for_run("rid", "logreg", tmp_path)
         assert model is None
         assert source == "missing"
+
+
+class TestTuningSource:
+    """RunSummary.tuning_source field and tuning_summary helper."""
+
+    def test_default_tuning_source_is_none(self):
+        r = RunSummary("r1", "logreg", {}, {}, 1000, "1")
+        assert r.tuning_source is None
+
+    def test_tuning_source_set_explicitly(self):
+        r = RunSummary("r1", "logreg", {}, {}, 1000, "1", tuning_source="ray-tune")
+        assert r.tuning_source == "ray-tune"
+
+    def test_list_runs_populates_tuning_source(self):
+        runs = [
+            _make_run("r1", "logreg", {"accuracy": 0.5}, 1000, tags={TUNE_TAG_KEY: "ray-tune"}),
+            _make_run("r2", "logreg", {"accuracy": 0.6}, 2000),
+        ]
+        client = _client_with_runs(runs)
+        grouped = list_runs_by_model(client, "crypto-baseline")
+        sources = [r.tuning_source for r in grouped["logreg"]]
+        assert "ray-tune" in sources
+        assert None in sources
+
+    def test_tuning_summary_counts(self):
+        runs = {
+            "logreg": [
+                RunSummary("r1", "logreg", {"roc_auc": 0.6}, {}, 1, "1", tuning_source="ray-tune"),
+                RunSummary("r2", "logreg", {"roc_auc": 0.7}, {}, 2, "1", tuning_source="ray-tune"),
+                RunSummary("r3", "logreg", {"roc_auc": 0.5}, {}, 3, "1"),
+            ],
+        }
+        summary = tuning_summary(runs)
+        assert summary["logreg"]["total_tuned_runs"] == 2
+        assert summary["logreg"]["total_manual_runs"] == 1
+
+    def test_tuning_summary_empty_when_no_runs(self):
+        assert tuning_summary({}) == {}

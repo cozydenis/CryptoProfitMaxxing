@@ -16,3 +16,14 @@ train:
   random_state: 42
   experiment_name: crypto-baseline
   registered_model_name: crypto_trend_baseline
+
+tune:
+  features_path: data/processed/features.csv
+  num_samples: 20
+  max_concurrent_trials: 2
+  metric: roc_auc
+  mode: max
+  test_frac: 0.2
+  random_state: 42
+  experiment_name: crypto-baseline
+  registered_model_name: crypto_trend_baseline

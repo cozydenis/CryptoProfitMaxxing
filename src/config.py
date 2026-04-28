@@ -30,3 +30,8 @@ FEATURE_COLUMNS = [
     "volume_change_1d",
 ]
 TARGET_COLUMN = "target"
+
+TUNE_TAG_KEY = "tuning_source"
+TUNE_TAG_VALUE = "ray-tune"
+DEFAULT_TUNE_NUM_SAMPLES = 20
+DEFAULT_TUNE_MAX_CONCURRENT = 2

@@ -34,6 +34,7 @@ from src.mlflow_store import (
     load_model_for_run,
     metrics_dataframe,
     runs_dataframe,
+    tuning_summary,
 )
 from src.models.baseline import chronological_split
 from src.models.diagnostics import (
@@ -119,8 +120,8 @@ def _render_sidebar(
 
     st.sidebar.divider()
     st.sidebar.caption(
-        "CryptoProfitMaxxing — Week 10 pitch demo  \n"
-        "CoinGecko + DVC + MLflow + Streamlit"
+        "CryptoProfitMaxxing — MLOps demo  \n"
+        "CoinGecko + DVC + MLflow + Ray Tune + Streamlit"
     )
 
 
@@ -432,6 +433,18 @@ def main() -> None:
     st.subheader("Metric comparison")
     st.plotly_chart(_metrics_bar_chart(metrics_df), width="stretch")
 
+    tune_info = tuning_summary(runs_by_model)
+    has_tuned = any(v["total_tuned_runs"] > 0 for v in tune_info.values())
+    if has_tuned:
+        st.subheader("Hyperparameter tuning (Ray Tune)")
+        tune_cols = st.columns(len(tune_info))
+        for col, (model, info) in zip(tune_cols, tune_info.items()):
+            with col:
+                tuned_n = info["total_tuned_runs"]
+                manual_n = info["total_manual_runs"]
+                st.metric(f"{model} trials", tuned_n)
+                st.caption(f"{manual_n} manual run(s)")
+
     st.subheader("Diagnostics on held-out test split")
     X_all = df[FEATURE_COLUMNS].copy()
     y_all = df[TARGET_COLUMN].astype(int)
@@ -465,7 +478,7 @@ def main() -> None:
     with st.expander("About this dashboard"):
         st.markdown(
             """
-            **Week 10 pitch demo** for the CryptoProfitMaxxing MLOps project.
+            **CryptoProfitMaxxing** — MLOps pipeline demo.
 
             Pipeline:
             1. `dvc repro` — ingest CoinGecko BTC data and compute technical
@@ -474,13 +487,16 @@ def main() -> None:
                a chronological 80/20 split. Params, metrics, and the sklearn
                artifact are logged to the local MLflow store; the run is
                registered to `crypto_trend_baseline`.
-            3. This dashboard queries MLflow for the best run per model
+            3. `python tune.py --model {logreg,rf}` — Ray Tune hyperparameter
+               search. Each trial is logged to MLflow and tagged for
+               identification.
+            4. This dashboard queries MLflow for the best run per model
                (ROC AUC → accuracy → start time), loads both, and compares
                them side by side. Click **Refresh from MLflow** in the
                sidebar after a new training run to invalidate caches.
 
-            Planned for Week 11+: GitHub Actions CI, ETH support, Ray Tune
-            hyperparameter search, Alibi Detect drift monitoring.
+            Tools: CoinGecko API, DVC, MLflow, Ray Tune, GitHub Actions,
+            Streamlit.
             """
         )
 
