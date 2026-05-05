@@ -7,7 +7,7 @@ from typing import Any
 import mlflow
 import mlflow.sklearn
 import pandas as pd
-from ray import train, tune
+from ray import tune
 from ray.tune import ResultGrid, TuneConfig
 
 from src.config import (
@@ -81,7 +81,7 @@ def _objective(config: dict[str, Any]) -> None:
         except Exception:
             pass  # don't crash the trial if artifact logging fails
 
-    train.report({"roc_auc": metrics.get("roc_auc", 0.0), "accuracy": metrics["accuracy"]})
+    tune.report({"roc_auc": metrics.get("roc_auc", 0.0), "accuracy": metrics["accuracy"]})
 
 
 def run_tuning(
