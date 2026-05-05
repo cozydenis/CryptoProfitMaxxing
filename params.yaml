@@ -26,6 +26,12 @@ lstm:
   epochs: 50
   batch_size: 32
 
+drift:
+  features_path: data/processed/features.csv
+  test_frac: 0.2
+  test_window: 30
+  p_val: 0.05
+
 tune:
   features_path: data/processed/features.csv
   num_samples: 20

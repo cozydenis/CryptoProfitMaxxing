@@ -43,6 +43,13 @@ from src.models.diagnostics import (
     feature_importance,
 )
 
+try:
+    from src.drift.detector import DriftResult, check_drift_from_features
+
+    _DRIFT_AVAILABLE = True
+except ImportError:
+    _DRIFT_AVAILABLE = False
+
 STALE_FEATURES_HOURS = 48
 
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
@@ -366,6 +373,71 @@ def _render_all_runs_expander(
 
 
 # ---------------------------------------------------------------------------
+# Drift section
+# ---------------------------------------------------------------------------
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def _cached_drift_result() -> "DriftResult | None":
+    features_path = PROCESSED_DATA_DIR / "features.csv"
+    if not features_path.exists():
+        return None
+    try:
+        return check_drift_from_features(features_path)
+    except (ValueError, Exception):
+        return None
+
+
+def _drift_pvalue_chart(result: "DriftResult") -> go.Figure:
+    colors = [
+        "crimson" if d else "seagreen" for d in result.is_drift_per_feature
+    ]
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=result.p_values,
+            y=result.feature_names,
+            orientation="h",
+            marker=dict(color=colors),
+            text=[f"{p:.3f}" for p in result.p_values],
+            textposition="outside",
+        )
+    )
+    fig.add_vline(
+        x=result.p_val_threshold,
+        line_dash="dash",
+        line_color="gray",
+        annotation_text=f"threshold={result.p_val_threshold}",
+    )
+    fig.update_layout(
+        xaxis_title="p-value (KS test)",
+        height=max(300, 26 * len(result.feature_names) + 80),
+        margin=dict(l=10, r=60, t=10, b=10),
+    )
+    return fig
+
+
+def _render_drift_section() -> None:
+    st.header("Data Drift (Alibi Detect)")
+    result = _cached_drift_result()
+    if result is None:
+        st.info("Drift detection unavailable — run `dvc repro` first.")
+        return
+
+    if result.is_drift:
+        st.error("Drift detected — market regime may have shifted.")
+    else:
+        st.success("No drift detected — feature distributions are stable.")
+
+    st.caption(
+        f"Reference: {result.n_reference} rows | "
+        f"Test window: {result.n_test} rows | "
+        f"KS threshold: {result.p_val_threshold}"
+    )
+    st.plotly_chart(_drift_pvalue_chart(result), use_container_width=True)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -473,6 +545,9 @@ def main() -> None:
             st.subheader("Random Forest feature importance")
             st.plotly_chart(fig, width="stretch")
 
+    if _DRIFT_AVAILABLE:
+        _render_drift_section()
+
     _render_all_runs_expander(runs_by_model)
 
     with st.expander("About this dashboard"):
@@ -495,8 +570,11 @@ def main() -> None:
                them side by side. Click **Refresh from MLflow** in the
                sidebar after a new training run to invalidate caches.
 
+            5. `python scripts/check_drift.py` — Alibi Detect KS-test
+               drift monitoring on feature distributions.
+
             Tools: CoinGecko API, DVC, MLflow, Ray Tune, GitHub Actions,
-            Streamlit.
+            Streamlit, Alibi Detect.
             """
         )
 
