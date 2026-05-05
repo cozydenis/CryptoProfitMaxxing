@@ -1,7 +1,7 @@
 {
   "model": "lstm",
-  "run_id": "7ffdc89cdb854e7f8d3e57f3a566e4ea",
-  "experiment_id": "772689934003900509",
+  "run_id": "3360f1d5117a4f04b0539ac331e5f9d5",
+  "experiment_id": "264692480913386188",
   "accuracy": 0.5079365079365079,
   "precision": 1.0,
   "recall": 0.1388888888888889,
