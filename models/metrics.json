@@ -1,0 +1,22 @@
+{
+  "model": "lstm",
+  "run_id": "7ffdc89cdb854e7f8d3e57f3a566e4ea",
+  "experiment_id": "772689934003900509",
+  "accuracy": 0.5079365079365079,
+  "precision": 1.0,
+  "recall": 0.1388888888888889,
+  "f1": 0.24390243902439024,
+  "n_test": 63,
+  "positive_rate_test": 0.5714285714285714,
+  "confusion_matrix": [
+    [
+      27,
+      0
+    ],
+    [
+      31,
+      5
+    ]
+  ],
+  "roc_auc": 0.47427983539094654
+}
