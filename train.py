@@ -32,19 +32,21 @@ from src.models.baseline import (
     evaluate,
     load_features,
 )
+from src.models.lstm import LSTMClassifier
 
 
 def _load_params() -> dict:
     params_path = Path(__file__).resolve().parent / "params.yaml"
     with params_path.open() as f:
-        return yaml.safe_load(f)["train"]
+        all_params = yaml.safe_load(f)
+    return all_params["train"], all_params.get("lstm", {})
 
 
 def main() -> int:
-    defaults = _load_params()
+    defaults, lstm_defaults = _load_params()
     parser = argparse.ArgumentParser(description="Train a baseline crypto model")
     parser.add_argument(
-        "--model", choices=["logreg", "rf"], default=defaults["model"]
+        "--model", choices=["logreg", "rf", "lstm"], default=defaults["model"]
     )
     parser.add_argument("--features", default=defaults["features_path"])
     parser.add_argument("--test-frac", type=float, default=defaults["test_frac"])
@@ -69,7 +71,20 @@ def main() -> int:
 
     X, y = load_features(args.features)
     split = chronological_split(X, y, test_frac=args.test_frac)
-    pipeline = build_model(args.model, random_state=args.random_state)
+
+    if args.model == "lstm":
+        pipeline = LSTMClassifier(
+            seq_len=lstm_defaults.get("seq_len", 10),
+            hidden_size=lstm_defaults.get("hidden_size", 64),
+            num_layers=lstm_defaults.get("num_layers", 1),
+            dropout=lstm_defaults.get("dropout", 0.0),
+            lr=lstm_defaults.get("lr", 1e-3),
+            epochs=lstm_defaults.get("epochs", 50),
+            batch_size=lstm_defaults.get("batch_size", 32),
+            random_state=args.random_state,
+        )
+    else:
+        pipeline = build_model(args.model, random_state=args.random_state)
 
     with mlflow.start_run(run_name=args.model) as run:
         mlflow.log_params(
@@ -92,6 +107,8 @@ def main() -> int:
         mlflow.log_metrics(scalar_metrics)
 
         registered_name = None if args.no_register else args.registered_model
+        if args.model == "lstm":
+            mlflow.log_params(pipeline.get_params())
         mlflow.sklearn.log_model(
             sk_model=pipeline,
             artifact_path="model",

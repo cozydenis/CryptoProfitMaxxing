@@ -17,6 +17,15 @@ train:
   experiment_name: crypto-baseline
   registered_model_name: crypto_trend_baseline
 
+lstm:
+  seq_len: 10
+  hidden_size: 64
+  num_layers: 1
+  dropout: 0.0
+  lr: 0.001
+  epochs: 50
+  batch_size: 32
+
 tune:
   features_path: data/processed/features.csv
   num_samples: 20

@@ -483,7 +483,7 @@ def main() -> None:
             Pipeline:
             1. `dvc repro` — ingest CoinGecko BTC data and compute technical
                indicators (RSI, MACD, SMA, EMA).
-            2. `python train.py --model {logreg,rf}` — train a classifier on
+            2. `python train.py --model {logreg,rf,lstm}` — train a classifier on
                a chronological 80/20 split. Params, metrics, and the sklearn
                artifact are logged to the local MLflow store; the run is
                registered to `crypto_trend_baseline`.
