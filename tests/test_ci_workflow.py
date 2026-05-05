@@ -1,8 +1,7 @@
-"""Tests for the GitHub Actions CI workflow configuration.
+"""Tests for the GitHub Actions workflow configurations.
 
-Validates that .github/workflows/ci.yml exists and has the correct
-structure: triggers, Python version, dependency install, linting, and
-test steps.
+Validates that ci.yml and retrain.yml exist and have the correct
+structure: triggers, Python version, steps, etc.
 """
 
 from __future__ import annotations
@@ -90,3 +89,51 @@ def _find_step_by_uses(steps: list[dict], keyword: str) -> dict | None:
 
 def _collect_run_text(steps: list[dict]) -> str:
     return " ".join(step.get("run", "") for step in steps)
+
+
+# ---------------------------------------------------------------------------
+# Retrain workflow
+# ---------------------------------------------------------------------------
+
+RETRAIN_WORKFLOW_PATH = PROJECT_ROOT / ".github" / "workflows" / "retrain.yml"
+
+
+@pytest.fixture
+def retrain_workflow() -> dict:
+    """Load and parse the retrain workflow YAML."""
+    assert RETRAIN_WORKFLOW_PATH.exists(), f"Retrain workflow not found at {RETRAIN_WORKFLOW_PATH}"
+    text = RETRAIN_WORKFLOW_PATH.read_text()
+    parsed = yaml.safe_load(text)
+    assert isinstance(parsed, dict)
+    return parsed
+
+
+class TestRetrainWorkflowTriggers:
+    def test_has_schedule(self, retrain_workflow: dict) -> None:
+        triggers = _get_triggers(retrain_workflow)
+        assert "schedule" in triggers, "Retrain must have a schedule trigger"
+
+    def test_has_workflow_dispatch(self, retrain_workflow: dict) -> None:
+        triggers = _get_triggers(retrain_workflow)
+        assert "workflow_dispatch" in triggers, "Retrain must support manual trigger"
+
+
+class TestRetrainWorkflowJob:
+    def test_has_retrain_job(self, retrain_workflow: dict) -> None:
+        assert "retrain" in retrain_workflow["jobs"]
+
+    def test_runs_dvc_repro(self, retrain_workflow: dict) -> None:
+        run_text = _collect_run_text(retrain_workflow["jobs"]["retrain"]["steps"])
+        assert "dvc repro" in run_text, "Must run dvc repro"
+
+    def test_runs_train(self, retrain_workflow: dict) -> None:
+        run_text = _collect_run_text(retrain_workflow["jobs"]["retrain"]["steps"])
+        assert "train.py" in run_text, "Must run train.py"
+
+    def test_runs_drift_check(self, retrain_workflow: dict) -> None:
+        run_text = _collect_run_text(retrain_workflow["jobs"]["retrain"]["steps"])
+        assert "check_drift" in run_text, "Must run drift check"
+
+    def test_commits_with_skip_ci(self, retrain_workflow: dict) -> None:
+        run_text = _collect_run_text(retrain_workflow["jobs"]["retrain"]["steps"])
+        assert "[skip ci]" in run_text, "Commit must include [skip ci] to prevent loop"

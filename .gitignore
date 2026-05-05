@@ -16,6 +16,7 @@ htmlcov/
 # Project data (DVC-tracked, never in git)
 /data/
 /models/
+!/models/metrics.json
 
 # MLflow local store
 mlruns/
