@@ -82,7 +82,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add dvc.lock models/metrics.json
+          git add --force dvc.lock models/metrics.json
           git diff --cached --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore(retrain): daily pipeline run${DRIFT_STATUS:-} [skip ci]"
           git push
