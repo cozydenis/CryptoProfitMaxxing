@@ -109,7 +109,7 @@ def _render_sidebar(
         latest_dt = datetime.fromtimestamp(latest_start / 1000, tz=timezone.utc)
         st.sidebar.caption(f"Latest run: {latest_dt:%Y-%m-%d %H:%M UTC}")
 
-    if st.sidebar.button("Refresh from MLflow", width="stretch"):
+    if st.sidebar.button("Refresh from MLflow", use_container_width=True):
         st.cache_data.clear()
         st.cache_resource.clear()
         st.rerun()
@@ -185,7 +185,7 @@ def _render_metrics_table(metrics_df: pd.DataFrame) -> None:
         display["start_time"], unit="ms", utc=True
     ).dt.strftime("%Y-%m-%d %H:%M")
     display = display.set_index("model")
-    st.dataframe(display, width="stretch")
+    st.dataframe(display, use_container_width=True)
 
 
 def _render_prediction_cards(
@@ -369,7 +369,7 @@ def _render_all_runs_expander(
                 table["start_time"] = pd.to_datetime(
                     table["start_time"], unit="ms", utc=True
                 ).dt.strftime("%Y-%m-%d %H:%M")
-            st.dataframe(table, width="stretch")
+            st.dataframe(table, use_container_width=True)
 
 
 # ---------------------------------------------------------------------------
@@ -462,7 +462,7 @@ def main() -> None:
 
     _render_header(df)
     st.subheader("BTC / USD — close price")
-    st.plotly_chart(_price_chart(df), width="stretch")
+    st.plotly_chart(_price_chart(df), use_container_width=True)
 
     st.header("Model comparison")
 
@@ -503,7 +503,7 @@ def main() -> None:
         return
 
     st.subheader("Metric comparison")
-    st.plotly_chart(_metrics_bar_chart(metrics_df), width="stretch")
+    st.plotly_chart(_metrics_bar_chart(metrics_df), use_container_width=True)
 
     tune_info = tuning_summary(runs_by_model)
     has_tuned = any(v["total_tuned_runs"] > 0 for v in tune_info.values())
@@ -533,7 +533,7 @@ def main() -> None:
     if diag_by_model:
         st.markdown("**ROC curves**")
         st.plotly_chart(
-            _roc_overlay(diag_by_model), width="stretch"
+            _roc_overlay(diag_by_model), use_container_width=True
         )
         st.markdown("**Confusion matrices**")
         _render_confusion_matrices(diag_by_model)
@@ -543,7 +543,7 @@ def main() -> None:
         fig = _feature_importance_chart(rf_entry[0])
         if fig is not None:
             st.subheader("Random Forest feature importance")
-            st.plotly_chart(fig, width="stretch")
+            st.plotly_chart(fig, use_container_width=True)
 
     if _DRIFT_AVAILABLE:
         _render_drift_section()
