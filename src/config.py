@@ -1,5 +1,6 @@
 """Project-wide constants and path helpers."""
 
+import os
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -11,7 +12,10 @@ PROCESSED_DATA_DIR = DATA_DIR / "processed"
 MODELS_DIR = PROJECT_ROOT / "models"
 MLRUNS_DIR = PROJECT_ROOT / "mlruns"
 
-MLFLOW_TRACKING_URI = f"file://{MLRUNS_DIR}"
+MLFLOW_TRACKING_URI = os.environ.get(
+    "MLFLOW_TRACKING_URI",
+    f"file://{MLRUNS_DIR}",
+)
 DEFAULT_EXPERIMENT_NAME = "crypto-baseline"
 DEFAULT_REGISTERED_MODEL_NAME = "crypto_trend_baseline"
 
