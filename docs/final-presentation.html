@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CryptoTrend — Final Presentation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #1a1a2e; color: #e0e0e0; }
+  .slide { width: 1280px; height: 720px; padding: 60px 80px; page-break-after: always; position: relative; overflow: hidden; }
+  .slide-dark { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+  .slide-accent { background: linear-gradient(135deg, #16213e 0%, #0f3460 100%); }
+  h1 { font-size: 52px; font-weight: 900; color: #e94560; margin-bottom: 16px; }
+  h2 { font-size: 36px; font-weight: 700; color: #00d4aa; margin-bottom: 24px; }
+  h3 { font-size: 24px; font-weight: 600; color: #e94560; margin-bottom: 12px; }
+  p, li { font-size: 22px; line-height: 1.6; }
+  ul { list-style: none; padding-left: 0; }
+  ul li::before { content: ""; display: inline-block; width: 8px; height: 8px; background: #00d4aa; border-radius: 50%; margin-right: 12px; vertical-align: middle; }
+  .title-slide { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .title-slide h1 { font-size: 72px; margin-bottom: 8px; }
+  .title-slide .subtitle { font-size: 28px; color: #00d4aa; margin-bottom: 40px; }
+  .title-slide .team { font-size: 20px; color: #888; }
+  .two-col { display: flex; gap: 48px; margin-top: 20px; }
+  .col { flex: 1; }
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 20px; }
+  th { background: #0f3460; color: #00d4aa; padding: 12px 16px; text-align: left; font-weight: 600; }
+  td { padding: 10px 16px; border-bottom: 1px solid #2a2a4a; }
+  .highlight { color: #00d4aa; font-weight: 700; }
+  .accent { color: #e94560; font-weight: 700; }
+  .badge { display: inline-block; background: #00d4aa; color: #1a1a2e; padding: 4px 14px; border-radius: 20px; font-weight: 700; font-size: 16px; margin: 4px; }
+  .badge-red { background: #e94560; color: white; }
+  .stat-row { display: flex; gap: 32px; margin: 24px 0; }
+  .stat-box { background: #0f3460; border-radius: 12px; padding: 24px; flex: 1; text-align: center; }
+  .stat-box .number { font-size: 48px; font-weight: 900; color: #00d4aa; }
+  .stat-box .label { font-size: 16px; color: #888; margin-top: 4px; }
+  .pipeline-box { background: #0f3460; border-radius: 8px; padding: 16px 20px; margin: 8px 0; border-left: 4px solid #00d4aa; }
+  .pipeline-box.red { border-left-color: #e94560; }
+  .code { font-family: 'Courier New', monospace; background: #0a0a1a; padding: 16px; border-radius: 8px; font-size: 18px; color: #00d4aa; margin-top: 12px; }
+  .slide-number { position: absolute; bottom: 20px; right: 40px; font-size: 14px; color: #555; }
+  .speaker { position: absolute; bottom: 20px; left: 40px; font-size: 14px; color: #e94560; font-weight: 600; }
+  .check { color: #00d4aa; }
+  .split-bar { display: flex; margin: 16px 0; border-radius: 8px; overflow: hidden; height: 40px; font-size: 16px; font-weight: 700; }
+  .split-train { background: #00d4aa; color: #1a1a2e; flex: 4; display: flex; align-items: center; justify-content: center; }
+  .split-test { background: #e94560; color: white; flex: 1; display: flex; align-items: center; justify-content: center; }
+  @media print { .slide { page-break-after: always; } }
+</style>
+</head>
+<body>
+
+<!-- SLIDE 1: Title -->
+<div class="slide slide-dark title-slide">
+  <h1>Crypto<span style="color:#00d4aa">Trend</span></h1>
+  <div class="subtitle">ML-Powered Cryptocurrency Prediction Tool</div>
+  <div class="stat-row" style="margin-top:20px">
+    <div class="stat-box"><div class="number">6</div><div class="label">MLOps Tools</div></div>
+    <div class="stat-box"><div class="number">3</div><div class="label">Models</div></div>
+    <div class="stat-box"><div class="number">14+</div><div class="label">Daily Retrain Runs</div></div>
+    <div class="stat-box"><div class="number">112</div><div class="label">Tests</div></div>
+  </div>
+  <div class="team" style="margin-top:24px">Djaferi Denis &middot; Martinez Adrian &middot; Nguyen Jason</div>
+  <div class="slide-number">1/10</div>
+</div>
+
+<!-- SLIDE 2: The Problem -->
+<div class="slide slide-accent">
+  <h1>The Problem</h1>
+  <h2>Why Crypto Needs MLOps</h2>
+  <div class="two-col">
+    <div class="col">
+      <ul style="font-size:24px; line-height:2.2">
+        <li>Crypto markets are highly volatile and trade <span class="highlight">24/7</span></li>
+        <li>Data shifts constantly &rarr; models <span class="accent">degrade fast</span></li>
+        <li>Need <span class="highlight">automated retraining</span> &amp; continuous monitoring</li>
+        <li>Perfect use case for MLOps practices</li>
+      </ul>
+    </div>
+    <div class="col">
+      <div class="stat-box" style="margin-bottom:24px">
+        <div class="number">$2.5T+</div>
+        <div class="label">Global crypto market cap</div>
+      </div>
+      <div class="stat-box">
+        <div class="number">24/7</div>
+        <div class="label">Non-stop trading, data never sleeps</div>
+      </div>
+    </div>
+  </div>
+  <div class="speaker">Denis</div>
+  <div class="slide-number">2/10</div>
+</div>
+
+<!-- SLIDE 3: Architecture -->
+<div class="slide slide-dark">
+  <h1>Architecture</h1>
+  <h2>End-to-end pipeline: API data &rarr; live predictions</h2>
+  <div style="display:flex; gap:12px; margin-top:20px;">
+    <div class="pipeline-box" style="flex:1; text-align:center;">
+      <h3 style="color:#00d4aa">Data Ingestion</h3>
+      <p style="font-size:16px">CoinGecko API<br>&rarr; DVC versioning</p>
+    </div>
+    <div style="display:flex;align-items:center;color:#00d4aa;font-size:28px">&rarr;</div>
+    <div class="pipeline-box" style="flex:1; text-align:center;">
+      <h3 style="color:#00d4aa">Feature Eng.</h3>
+      <p style="font-size:16px">RSI, MACD,<br>Moving Averages</p>
+    </div>
+    <div style="display:flex;align-items:center;color:#00d4aa;font-size:28px">&rarr;</div>
+    <div class="pipeline-box" style="flex:1; text-align:center;">
+      <h3 style="color:#00d4aa">Model Training</h3>
+      <p style="font-size:16px">LogReg, RF, LSTM<br>MLflow + Ray Tune</p>
+    </div>
+    <div style="display:flex;align-items:center;color:#00d4aa;font-size:28px">&rarr;</div>
+    <div class="pipeline-box" style="flex:1; text-align:center;">
+      <h3 style="color:#00d4aa">Testing &amp; CI</h3>
+      <p style="font-size:16px">PyTest + GitHub<br>Actions pipeline</p>
+    </div>
+    <div style="display:flex;align-items:center;color:#00d4aa;font-size:28px">&rarr;</div>
+    <div class="pipeline-box" style="flex:1; text-align:center;">
+      <h3 style="color:#00d4aa">Dashboard</h3>
+      <p style="font-size:16px">Streamlit UI<br>Model comparison</p>
+    </div>
+  </div>
+  <div style="margin-top:32px;">
+    <div class="pipeline-box red" style="text-align:center;">
+      <h3 style="color:#e94560">Automated Daily Retraining</h3>
+      <p style="font-size:18px">GitHub Actions cron &rarr; ingest &rarr; train &rarr; drift check &rarr; commit back to main &mdash; <span class="highlight">14+ consecutive runs</span></p>
+    </div>
+  </div>
+  <div class="speaker">Denis</div>
+  <div class="slide-number">3/10</div>
+</div>
+
+<!-- SLIDE 4: Tool Stack -->
+<div class="slide slide-accent">
+  <h1>Tool Stack</h1>
+  <h2>6 MLOps Tools</h2>
+  <table>
+    <tr><th>Tool</th><th>Purpose</th><th>Why?</th></tr>
+    <tr><td><span class="highlight">DVC</span></td><td>Data versioning</td><td>Track which dataset trained which model</td></tr>
+    <tr><td><span class="highlight">MLflow</span></td><td>Experiment tracking + registry</td><td>Compare models, log every run</td></tr>
+    <tr><td><span class="highlight">GitHub Actions</span></td><td>CI/CD + daily retraining</td><td>Automated testing + autonomous pipeline</td></tr>
+    <tr><td><span class="highlight">Ray Tune</span></td><td>Hyperparameter search</td><td>20 trials per model, automated</td></tr>
+    <tr><td><span class="highlight">Streamlit</span></td><td>Interactive dashboard</td><td>Predictions, charts, drift status</td></tr>
+    <tr><td><span class="highlight">Alibi Detect</span></td><td>Drift monitoring</td><td>KS-test detects market regime shifts</td></tr>
+  </table>
+  <div class="speaker">Denis</div>
+  <div class="slide-number">4/10</div>
+</div>
+
+<!-- SLIDE 5: Models -->
+<div class="slide slide-dark">
+  <h1>Models</h1>
+  <h2>3 Models Compared in MLflow</h2>
+  <table>
+    <tr><th>Model</th><th>Type</th><th>Key Feature</th></tr>
+    <tr><td><span class="highlight">Logistic Regression</span></td><td>sklearn</td><td>Linear baseline, L1/L2 regularization</td></tr>
+    <tr><td><span class="highlight">Random Forest</span></td><td>sklearn</td><td>Feature importance, best overall accuracy</td></tr>
+    <tr><td><span class="highlight">LSTM</span></td><td>PyTorch</td><td>Sequential patterns, sklearn-compatible wrapper</td></tr>
+  </table>
+  <div style="margin-top:24px;">
+    <h3>11 Technical Indicator Features</h3>
+    <div style="margin-top:12px;">
+      <span class="badge">return_1d</span>
+      <span class="badge">SMA 10</span>
+      <span class="badge">SMA 20</span>
+      <span class="badge">SMA 50</span>
+      <span class="badge">EMA 12</span>
+      <span class="badge">EMA 26</span>
+      <span class="badge">RSI 14</span>
+      <span class="badge">MACD</span>
+      <span class="badge">MACD Signal</span>
+      <span class="badge">MACD Hist</span>
+      <span class="badge">Volume Change</span>
+    </div>
+  </div>
+  <div class="speaker">Adrian</div>
+  <div class="slide-number">5/10</div>
+</div>
+
+<!-- SLIDE 6: Training Approach -->
+<div class="slide slide-accent">
+  <h1>Training Approach</h1>
+  <h2>Chronological Split &mdash; No Future Leakage</h2>
+  <div class="split-bar" style="margin:24px 0;">
+    <div class="split-train">TRAIN (80%) &mdash; 252 days</div>
+    <div class="split-test">TEST (20%) &mdash; 63 days</div>
+  </div>
+  <ul style="font-size:22px; line-height:2.2; margin-top:16px;">
+    <li>Strict time-order split &mdash; <span class="accent">never shuffled</span></li>
+    <li>Prevents the classic ML-on-time-series mistake (future data leakage)</li>
+    <li>Same split for all 3 models &mdash; fair comparison</li>
+    <li>Target: did BTC go <span class="highlight">UP</span> or <span class="accent">DOWN</span> the next day?</li>
+  </ul>
+  <div style="margin-top:24px;">
+    <h3>Ray Tune Hyperparameter Search</h3>
+    <p>20 random configurations per model &mdash; every trial logged to MLflow</p>
+  </div>
+  <div class="speaker">Adrian</div>
+  <div class="slide-number">6/10</div>
+</div>
+
+<!-- SLIDE 7: Results -->
+<div class="slide slide-dark">
+  <h1>Results</h1>
+  <h2>Model Performance</h2>
+  <table>
+    <tr><th>Model</th><th>Accuracy</th><th>ROC AUC</th><th>Notes</th></tr>
+    <tr><td>Logistic Regression</td><td>~43%</td><td>~0.54</td><td>Linear baseline</td></tr>
+    <tr><td><span class="highlight">Random Forest</span></td><td><span class="highlight">~59%</span></td><td><span class="highlight">~0.54</span></td><td>Best overall</td></tr>
+    <tr><td>LSTM</td><td>~52%</td><td>~0.48</td><td>Sequential patterns</td></tr>
+  </table>
+  <div class="pipeline-box red" style="margin-top:32px;">
+    <h3 style="color:#e94560; margin-bottom:8px;">Why ~50% accuracy is expected</h3>
+    <p style="font-size:20px;">Daily crypto direction is fundamentally near-random &mdash; academic research confirms this. Our results <span class="highlight">validate the MLOps thesis</span>: models degrade fast, which is exactly why you need automated retraining, drift detection, and experiment tracking.</p>
+  </div>
+  <div class="speaker">Adrian</div>
+  <div class="slide-number">7/10</div>
+</div>
+
+<!-- SLIDE 8: Automation -->
+<div class="slide slide-accent">
+  <h1>Automation</h1>
+  <h2>CI/CD + Automated Daily Retraining</h2>
+  <div class="two-col">
+    <div class="col">
+      <h3 style="color:#00d4aa">On Every Push (ci.yml)</h3>
+      <div class="pipeline-box">
+        <p>Ruff lint &rarr; 112 pytest tests</p>
+        <p style="font-size:16px;color:#888">87% coverage on src/</p>
+      </div>
+      <h3 style="color:#00d4aa; margin-top:20px;">Daily at 06:00 UTC (retrain.yml)</h3>
+      <div class="pipeline-box">
+        <p>&check; Ingest fresh CoinGecko data</p>
+        <p>&check; Compute features</p>
+        <p>&check; Train all 3 models</p>
+        <p>&check; Check drift (Alibi Detect)</p>
+        <p>&check; Commit results back to main</p>
+        <p>&check; Log to Dagshub MLflow</p>
+      </div>
+    </div>
+    <div class="col">
+      <div class="stat-box" style="margin-top:40px;">
+        <div class="number">14+</div>
+        <div class="label">Consecutive daily retrain runs</div>
+      </div>
+      <div class="stat-box" style="margin-top:24px;">
+        <div class="number">~3 min</div>
+        <div class="label">End-to-end pipeline time</div>
+      </div>
+      <div class="stat-box" style="margin-top:24px;">
+        <div class="number">0</div>
+        <div class="label">Manual intervention required</div>
+      </div>
+    </div>
+  </div>
+  <div class="speaker">Jason</div>
+  <div class="slide-number">8/10</div>
+</div>
+
+<!-- SLIDE 9: Drift Detection -->
+<div class="slide slide-dark">
+  <h1>Drift Detection</h1>
+  <h2>Alibi Detect &mdash; KS Test per Feature</h2>
+  <div class="two-col">
+    <div class="col">
+      <table style="font-size:18px;">
+        <tr><th>Feature</th><th>p-value</th><th>Drift?</th></tr>
+        <tr><td>return_1d</td><td>0.6743</td><td><span class="check">no</span></td></tr>
+        <tr><td>sma_10</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>sma_20</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>sma_50</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>ema_12</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>ema_26</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>rsi_14</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>macd</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>macd_signal</td><td>0.0000</td><td><span class="accent">YES</span></td></tr>
+        <tr><td>macd_hist</td><td>0.0059</td><td><span class="check">no</span></td></tr>
+        <tr><td>volume_change_1d</td><td>0.6743</td><td><span class="check">no</span></td></tr>
+      </table>
+    </div>
+    <div class="col">
+      <div class="pipeline-box red" style="margin-top:20px;">
+        <h3 style="color:#e94560">8/11 features drifted</h3>
+        <p style="font-size:18px; margin-top:8px;">Price-based features (SMA, EMA, MACD) shift naturally as BTC price changes.</p>
+        <p style="font-size:18px; margin-top:8px;">Stationary features (returns, volume %) don't drift.</p>
+        <p style="font-size:18px; margin-top:12px;"><span class="highlight">This is exactly correct</span> &mdash; and proves why automated retraining matters.</p>
+      </div>
+      <div class="stat-box" style="margin-top:24px;">
+        <div class="number" style="font-size:36px">252 vs 30</div>
+        <div class="label">Reference rows vs test window</div>
+      </div>
+    </div>
+  </div>
+  <div class="speaker">Jason</div>
+  <div class="slide-number">9/10</div>
+</div>
+
+<!-- SLIDE 10: Summary -->
+<div class="slide slide-accent title-slide">
+  <h1 style="font-size:56px;">What We Delivered</h1>
+  <div style="text-align:left; max-width:800px; margin-top:24px;">
+    <ul style="font-size:24px; line-height:2.0;">
+      <li><span class="check">&check;</span> <span class="highlight">6 MLOps tools</span> &mdash; DVC, MLflow, GitHub Actions, Ray Tune, Streamlit, Alibi Detect</li>
+      <li><span class="check">&check;</span> <span class="highlight">3 models</span> compared &mdash; LogReg, Random Forest, LSTM</li>
+      <li><span class="check">&check;</span> <span class="highlight">End-to-end pipeline</span> &mdash; ingest &rarr; train &rarr; register &rarr; serve</li>
+      <li><span class="check">&check;</span> <span class="highlight">Automated daily retraining</span> &mdash; 14+ runs, fully autonomous</li>
+      <li><span class="check">&check;</span> <span class="highlight">Drift monitoring</span> &mdash; per-feature KS test with dashboard</li>
+      <li><span class="check">&check;</span> <span class="highlight">112 tests</span>, 87% coverage, CI green on every push</li>
+    </ul>
+  </div>
+  <div style="margin-top:32px; font-size:28px; color:#e94560; font-weight:700;">
+    The pipeline is the product.
+  </div>
+  <div class="team" style="margin-top:32px;">Thank you &mdash; Questions?</div>
+  <div class="slide-number">10/10</div>
+</div>
+
+</body>
+</html>
