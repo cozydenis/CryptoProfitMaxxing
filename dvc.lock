@@ -9,8 +9,8 @@ stages:
       size: 1261
     - path: src/config.py
       hash: md5
-      md5: c7f18c93f3f05f731b354d0878790258
-      size: 851
+      md5: 5ad570df8372d4c6a7b4b8386512a845
+      size: 911
     - path: src/ingestion/coingecko.py
       hash: md5
       md5: 815184c5ef2c9d5699dbc2539c15eec2
@@ -24,23 +24,23 @@ stages:
     outs:
     - path: data/raw/btc_usd.csv
       hash: md5
-      md5: 6afaa6143b09b22b5f732c1e11b6dc50
-      size: 22869
+      md5: a74ce968306d60cad25dbc59df8c63cc
+      size: 22866
   featurize:
     cmd: python scripts/featurize.py
     deps:
     - path: data/raw/btc_usd.csv
       hash: md5
-      md5: 6afaa6143b09b22b5f732c1e11b6dc50
-      size: 22869
+      md5: a74ce968306d60cad25dbc59df8c63cc
+      size: 22866
     - path: scripts/featurize.py
       hash: md5
       md5: 7b204566c425504fcb5ac384d34c4cb4
       size: 1404
     - path: src/config.py
       hash: md5
-      md5: c7f18c93f3f05f731b354d0878790258
-      size: 851
+      md5: 5ad570df8372d4c6a7b4b8386512a845
+      size: 911
     - path: src/features/indicators.py
       hash: md5
       md5: f6e4ae75e9e5570c628e491de0a4a042
@@ -57,5 +57,5 @@ stages:
     outs:
     - path: data/processed/features.csv
       hash: md5
-      md5: 9c0876dc98e0a5fdaa03516045b1f1be
-      size: 85858
+      md5: 2d08fba19e240d54b85cd436c3805a5e
+      size: 85833
