@@ -1,6 +1,6 @@
 {
   "model": "lstm",
-  "run_id": "e551d824363f4ce690b43533d2efb157",
+  "run_id": "2bcc4e62010648dd861bbd6628282d27",
   "experiment_id": "0",
   "accuracy": 0.4603174603174603,
   "precision": 0.0,
@@ -18,5 +18,5 @@
       0
     ]
   ],
-  "roc_auc": 0.5444444444444445
+  "roc_auc": 0.497979797979798
 }
