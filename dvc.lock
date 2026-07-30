@@ -24,15 +24,15 @@ stages:
     outs:
     - path: data/raw/btc_usd.csv
       hash: md5
-      md5: b6ebf93721c05168eda9ecd90b55fb78
-      size: 22822
+      md5: 21fba39889d33b3f86aae2df0c969768
+      size: 22821
   featurize:
     cmd: python scripts/featurize.py
     deps:
     - path: data/raw/btc_usd.csv
       hash: md5
-      md5: b6ebf93721c05168eda9ecd90b55fb78
-      size: 22822
+      md5: 21fba39889d33b3f86aae2df0c969768
+      size: 22821
     - path: scripts/featurize.py
       hash: md5
       md5: 7b204566c425504fcb5ac384d34c4cb4
@@ -57,5 +57,5 @@ stages:
     outs:
     - path: data/processed/features.csv
       hash: md5
-      md5: ced8165c8d0bbbe34edd6e6529ffcb61
-      size: 85553
+      md5: e177eed782b587affe74486f8c9a2365
+      size: 85571
