@@ -1,22 +1,22 @@
 {
   "model": "lstm",
-  "run_id": "65fadacfb7124f76b63819c2208acbbe",
+  "run_id": "bc3efbf1f0824eca8a180714c8d58515",
   "experiment_id": "0",
-  "accuracy": 0.5238095238095238,
+  "accuracy": 0.5396825396825397,
   "precision": 0.4166666666666667,
-  "recall": 0.17857142857142858,
-  "f1": 0.25,
+  "recall": 0.18518518518518517,
+  "f1": 0.2564102564102564,
   "n_test": 63,
-  "positive_rate_test": 0.4444444444444444,
+  "positive_rate_test": 0.42857142857142855,
   "confusion_matrix": [
     [
-      28,
+      29,
       7
     ],
     [
-      23,
+      22,
       5
     ]
   ],
-  "roc_auc": 0.5602040816326531
+  "roc_auc": 0.5133744855967077
 }
